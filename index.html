@@ -1,0 +1,517 @@
+<!--
+  Budget Breakdown Generator
+  Built by Jaren Cudilla — https://engineeredai.net
+  Free to use with attribution. Link back to https://engineeredai.net if you share or fork this.
+  Source: https://github.com/smallware-co/budget-breakdown-generator
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Budget Breakdown Generator — EngineeredAI Tools</title>
+<meta name="description" content="Paste your expenses and get a clear categorized budget breakdown. AI explains where your money goes and gives practical tips. Free, bring your own key.">
+<link rel="icon" type="image/png" href="https://engineeredai.net/sw-amber-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --amber: #F5A623; --bg: #080808; --bg-card: #0e0e0e; --bg-card-hover: #131313;
+    --bg-input: #0c0c0c; --border: #1c1c1c; --border-mid: #262626;
+    --text: #e2e2e2; --text-mid: #888; --text-dim: #444;
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24; --blue: #60a5fa; --purple: #c084fc;
+    --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .nav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; padding: 0 24px; height: 48px; background: rgba(8,8,8,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .nav-brand { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: var(--text); text-decoration: none; }
+  .nav-brand span { color: var(--amber); }
+  .nav-sep { font-family: var(--mono); color: var(--text-dim); margin: 0 10px; font-size: 12px; }
+  .nav-path { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+  .nav-path span { color: var(--amber); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .nav-link { font-family: var(--mono); font-size: 11px; color: var(--text-dim); text-decoration: none; transition: color 0.15s; }
+  .nav-link:hover { color: var(--amber); }
+  .layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 48px); }
+  .panel-left { border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 28px 20px; gap: 20px; overflow-y: auto; }
+  .panel-title { font-family: var(--mono); font-size: 11px; color: var(--amber); letter-spacing: 0.12em; margin-bottom: 4px; }
+  .panel-heading { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 6px; }
+  .panel-heading em { color: var(--amber); font-style: normal; }
+  .panel-sub { font-size: 12px; color: var(--text-mid); line-height: 1.65; }
+  .divider { height: 1px; background: var(--border); flex-shrink: 0; }
+  .field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 7px; display: flex; align-items: center; justify-content: space-between; }
+  .field-label a { color: var(--amber); text-decoration: none; }
+  input[type="password"], input[type="number"], input[type="text"], select, textarea {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: 3px;
+    color: var(--text); font-family: var(--mono); font-size: 12px; padding: 10px 12px;
+    outline: none; transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--amber); }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23444'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  .key-note { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+  .key-note .ok { color: var(--green); }
+  .input-prefix { position: relative; }
+  .input-prefix-label { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 12px; color: var(--text-dim); pointer-events: none; }
+  .input-prefix input { padding-left: 30px; }
+  .expense-area { font-family: var(--sans); font-size: 13px; resize: vertical; min-height: 140px; line-height: 1.6; }
+  .example-btn { font-family: var(--mono); font-size: 10px; color: var(--amber); background: transparent; border: none; cursor: pointer; padding: 0; text-decoration: underline; }
+  .run-btn { width: 100%; background: var(--amber); color: #000; border: none; border-radius: 3px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; padding: 12px; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .run-btn:hover { background: #e8971f; }
+  .run-btn:disabled { background: #1e1e1e; color: var(--text-dim); cursor: not-allowed; }
+  .spinner { width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .run-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { font-family: var(--mono); font-size: 11px; color: var(--red); padding: 9px 12px; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); border-radius: 3px; display: none; line-height: 1.5; }
+  .error-msg.visible { display: block; }
+  .panel-right { display: flex; flex-direction: column; overflow: hidden; }
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--text-dim); padding: 40px; text-align: center; }
+  .empty-icon { font-size: 28px; opacity: 0.2; margin-bottom: 4px; }
+  .loading-state { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px; }
+  .loading-state.visible { display: flex; }
+  .loading-bar-wrap { width: 200px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .loading-bar { height: 100%; background: var(--amber); animation: loadBar 1.8s ease-in-out infinite; }
+  @keyframes loadBar { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+  .loading-steps { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+  .loading-step { font-family: var(--mono); font-size: 10px; color: var(--text-dim); opacity: 0; transition: opacity 0.4s; }
+  .loading-step.active { opacity: 1; color: var(--amber); }
+  .loading-step.done { opacity: 0.4; color: var(--green); }
+  .output-wrap { display: none; flex-direction: column; height: 100%; }
+  .output-wrap.visible { display: flex; }
+  .output-toolbar { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); gap: 10px; }
+  .output-label { font-family: var(--mono); font-size: 11px; color: var(--amber); letter-spacing: 0.1em; }
+  .toolbar-actions { margin-left: auto; display: flex; gap: 6px; }
+  .toolbar-btn { font-family: var(--mono); font-size: 10px; padding: 5px 12px; background: transparent; border: 1px solid var(--border-mid); border-radius: 2px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; }
+  .toolbar-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .toolbar-btn.copied { border-color: var(--green); color: var(--green); }
+  .output-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .output-body::-webkit-scrollbar { width: 4px; }
+  .output-body::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  /* SUMMARY HERO */
+  .summary-hero { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 20px; animation: fadeUp 0.3s ease both; }
+  .summary-label { font-family: var(--mono); font-size: 10px; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 12px; }
+  .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .summary-box { background: #0a0a0a; border: 1px solid var(--border); border-radius: 3px; padding: 12px; text-align: center; }
+  .summary-box-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 0.08em; margin-bottom: 5px; }
+  .summary-box-value { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .summary-verdict { font-size: 13px; color: var(--text-mid); line-height: 1.7; }
+  /* BAR CHART */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-category { font-family: var(--mono); font-size: 10px; color: var(--text-mid); width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 18px; background: var(--border); border-radius: 2px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 6px; }
+  .bar-fill span { font-family: var(--mono); font-size: 9px; color: rgba(0,0,0,0.7); font-weight: 600; white-space: nowrap; }
+  .bar-amount { font-family: var(--mono); font-size: 11px; color: var(--text-mid); width: 80px; text-align: right; flex-shrink: 0; }
+  /* CATEGORY CARDS */
+  .categories-section { animation: fadeUp 0.3s ease both; animation-delay: 0.1s; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .section-title { font-family: var(--mono); font-size: 11px; color: var(--amber); letter-spacing: 0.1em; }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .cat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+  .cat-header { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; transition: background 0.12s; }
+  .cat-header:hover { background: var(--bg-card-hover); }
+  .cat-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .cat-name { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 500; flex: 1; }
+  .cat-pct { font-family: var(--mono); font-size: 11px; color: var(--text-mid); }
+  .cat-amount { font-family: var(--mono); font-size: 12px; color: var(--amber); }
+  .cat-body { display: none; padding: 0 14px 12px; border-top: 1px solid var(--border); }
+  .cat-body.open { display: block; }
+  .cat-items { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .cat-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-mid); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .cat-item:last-child { border-bottom: none; }
+  .cat-tip { font-size: 12px; color: var(--green); padding: 8px 10px; background: rgba(74,222,128,0.04); border: 1px solid rgba(74,222,128,0.12); border-radius: 2px; margin-top: 8px; line-height: 1.5; }
+  /* AI INSIGHTS */
+  .insights-section { background: var(--bg-card); border: 1px solid var(--border); border-left: 2px solid var(--amber); border-radius: 4px; padding: 16px; animation: fadeUp 0.3s ease both; animation-delay: 0.14s; }
+  .insights-label { font-family: var(--mono); font-size: 10px; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 10px; }
+  .insight-item { font-size: 12px; color: var(--text-mid); margin-bottom: 8px; line-height: 1.6; padding-left: 12px; border-left: 2px solid var(--border-mid); }
+  .insight-item:last-child { margin-bottom: 0; }
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .summary-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="https://engineeredai.net" class="nav-brand">ENGINEERED<span>AI</span></a>
+  <span class="nav-sep">//</span>
+  <span class="nav-path">tools <span>/ budget-breakdown-generator</span></span>
+  <div class="nav-right">
+    <a href="https://engineeredai.net/tools" class="nav-link">← all tools</a>
+    <a href="https://github.com/smallware-co/budget-breakdown-generator" target="_blank" rel="noopener" class="nav-link">github ↗</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="panel-left">
+    <div>
+      <div class="panel-title">// budget-breakdown-generator</div>
+      <div class="panel-heading">Paste expenses.<br><em>Get clarity.</em></div>
+      <p class="panel-sub">Paste your monthly expenses in any format. Get a categorized breakdown, visual chart, and plain English insights on where your money actually goes.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="field-label">
+        <span>🔒 API KEY</span>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">get free key →</a>
+      </div>
+      <input type="password" id="apiKey" placeholder="Gemini / OpenAI / Anthropic key">
+      <div class="key-note" id="keyNote">Key stays in your browser only. Never stored or logged.</div>
+      <div class="field-label" style="margin-top:10px;">AI PROVIDER</div>
+      <select id="provider">
+        <option value="gemini">Gemini (Google)</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic (Claude)</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="field-label">
+        <span>MONTHLY INCOME <span style="color:var(--text-dim);font-size:9px;">optional</span></span>
+      </div>
+      <div class="input-prefix">
+        <span class="input-prefix-label">₱</span>
+        <input type="number" id="income" placeholder="e.g. 35000" min="0" step="500">
+      </div>
+    </div>
+
+    <div>
+      <div class="field-label">
+        <span>CURRENCY</span>
+      </div>
+      <select id="currency">
+        <option value="PHP">PHP (Philippine Peso ₱)</option>
+        <option value="USD">USD ($)</option>
+        <option value="SGD">SGD (S$)</option>
+        <option value="AUD">AUD (A$)</option>
+        <option value="GBP">GBP (£)</option>
+        <option value="EUR">EUR (€)</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="field-label">
+        <span>YOUR EXPENSES</span>
+        <button class="example-btn" onclick="loadExample()">load example</button>
+      </div>
+      <textarea class="expense-area" id="expenses" placeholder="Paste your expenses in any format:&#10;&#10;Rent 8000&#10;Groceries - 4500&#10;Electric bill: 1200&#10;Internet 999&#10;Netflix 299&#10;Grab food 2000&#10;..."></textarea>
+      <div class="key-note" style="margin-top:6px;">Any format works — one item per line, with or without amounts. AI will parse and categorize everything.</div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="run-btn" id="runBtn" onclick="runGenerator()">
+      <div class="spinner"></div>
+      <span id="runBtnText">Generate Breakdown →</span>
+    </button>
+  </div>
+
+  <div class="panel-right">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">₱</div>
+      <p style="color:var(--text-mid);font-size:13px;">Your budget breakdown will appear here.</p>
+      <p>Paste your expenses and hit <span style="color:var(--amber);">Generate →</span></p>
+    </div>
+    <div class="loading-state" id="loadingState">
+      <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+      <div class="loading-steps">
+        <div class="loading-step" id="step1">// parsing your expenses</div>
+        <div class="loading-step" id="step2">// categorizing spending</div>
+        <div class="loading-step" id="step3">// calculating percentages</div>
+        <div class="loading-step" id="step4">// generating insights</div>
+      </div>
+    </div>
+    <div class="output-wrap" id="outputWrap">
+      <div class="output-toolbar">
+        <span class="output-label">// budget breakdown</span>
+        <div class="toolbar-actions">
+          <button class="toolbar-btn" onclick="copyBreakdown()">copy</button>
+          <button class="toolbar-btn" onclick="exportCSV()">↓ CSV</button>
+          <button class="toolbar-btn" onclick="resetGenerator()">new budget</button>
+        </div>
+      </div>
+      <div class="output-body" id="outputBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const savedKey = localStorage.getItem('sw_api_key');
+  const savedProvider = localStorage.getItem('sw_provider');
+  if (savedKey) { document.getElementById('apiKey').value = savedKey; document.getElementById('keyNote').innerHTML = '<span class="ok">✓</span> Key loaded.'; }
+  if (savedProvider) document.getElementById('provider').value = savedProvider;
+  document.getElementById('apiKey').addEventListener('input', () => { const v = document.getElementById('apiKey').value.trim(); if (v.length > 10) localStorage.setItem('sw_api_key', v); });
+  document.getElementById('provider').addEventListener('change', () => localStorage.setItem('sw_provider', document.getElementById('provider').value));
+
+  const COLORS = ['#F5A623','#4ade80','#60a5fa','#c084fc','#f87171','#fbbf24','#34d399','#fb923c','#a78bfa','#38bdf8'];
+
+  function loadExample() {
+    document.getElementById('expenses').value = `Rent 8000
+Groceries 4500
+Electric bill 1200
+Water bill 300
+Internet 999
+Netflix 299
+Spotify 159
+Grab food 2500
+Gas / transportation 1500
+Mobile load 500
+Medicine / vitamins 800
+Clothing 1000
+Kids school allowance 2000
+Savings 3000`;
+    document.getElementById('income').value = '35000';
+  }
+
+  let stepTimers = [];
+  function startSteps() {
+    const steps = ['step1','step2','step3','step4'];
+    steps.forEach(s => document.getElementById(s).className = 'loading-step');
+    steps.forEach((s,i) => { stepTimers.push(setTimeout(() => { if(i>0) document.getElementById(steps[i-1]).classList.add('done'); document.getElementById(s).classList.add('active'); }, i*1200)); });
+  }
+  function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; }
+  function showError(msg) { const e = document.getElementById('errorMsg'); e.textContent = msg; e.classList.add('visible'); }
+  function hideError() { document.getElementById('errorMsg').classList.remove('visible'); }
+  function setLoading(on) {
+    const btn = document.getElementById('runBtn');
+    btn.disabled = on; btn.classList.toggle('loading', on);
+    document.getElementById('runBtnText').textContent = on ? 'Generating...' : 'Generate Breakdown →';
+    document.getElementById('emptyState').style.display = on ? 'none' : 'flex';
+    document.getElementById('loadingState').classList.toggle('visible', on);
+    if (on) startSteps(); else stopSteps();
+  }
+
+  async function callAI(key, provider, prompt) {
+    if (provider === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}) });
+      if (!res.ok) { const e = await res.json(); throw new Error(e?.error?.message || `Gemini error ${res.status}`); }
+      const d = await res.json(); return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else if (provider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`}, body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:prompt}],max_tokens:2500}) });
+      if (!res.ok) { const e = await res.json(); throw new Error(e?.error?.message || `OpenAI error ${res.status}`); }
+      const d = await res.json(); return d.choices?.[0]?.message?.content || '';
+    } else {
+      const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}, body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2500,messages:[{role:'user',content:prompt}]}) });
+      if (!res.ok) { const e = await res.json(); throw new Error(e?.error?.message || `Anthropic error ${res.status}`); }
+      const d = await res.json(); return d.content?.[0]?.text || '';
+    }
+  }
+
+  function fmt(n, currency) {
+    const sym = { PHP:'₱', USD:'$', SGD:'S$', AUD:'A$', GBP:'£', EUR:'€' }[currency] || '₱';
+    return sym + parseFloat(n).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  async function runGenerator() {
+    hideError();
+    const key = document.getElementById('apiKey').value.trim();
+    const provider = document.getElementById('provider').value;
+    const expenses = document.getElementById('expenses').value.trim();
+    const income = document.getElementById('income').value;
+    const currency = document.getElementById('currency').value;
+    if (!key) { showError('Paste your API key first.'); return; }
+    if (!expenses) { showError('Paste your expenses first.'); return; }
+    setLoading(true);
+    document.getElementById('outputWrap').classList.remove('visible');
+
+    const prompt = `You are a personal finance expert. Parse and categorize these expenses, then provide clear insights.
+
+EXPENSES:
+${expenses}
+
+MONTHLY INCOME: ${income ? income + ' ' + currency : 'not provided'}
+CURRENCY: ${currency}
+
+Return ONLY a valid JSON object — no markdown, no backticks:
+
+{
+  "total_expenses": 0,
+  "total_income": ${income || 0},
+  "savings_rate": 0,
+  "currency": "${currency}",
+  "verdict": "one sentence honest assessment of this budget",
+  "categories": [
+    {
+      "name": "Category Name",
+      "amount": 0,
+      "percentage": 0,
+      "items": [
+        { "name": "item name", "amount": 0 }
+      ],
+      "tip": "one practical tip for this category"
+    }
+  ],
+  "insights": [
+    "Specific insight about this budget",
+    "Another insight",
+    "Third insight",
+    "Fourth insight"
+  ]
+}
+
+Categories should be: Housing, Food & Groceries, Transportation, Utilities & Bills, Entertainment & Subscriptions, Health & Wellness, Clothing & Personal, Education & Kids, Savings & Investments, Other.
+Only include categories that have items. Calculate percentages based on total expenses. Be honest and practical in tips and insights. If amounts aren't provided for items, estimate based on typical costs in the region.`;
+
+    try {
+      let raw = await callAI(key, provider, prompt);
+      raw = raw.replace(/```json|```/g,'').trim();
+      const data = JSON.parse(raw);
+      setLoading(false);
+      renderBreakdown(data, currency);
+    } catch(err) {
+      setLoading(false);
+      document.getElementById('emptyState').style.display = 'flex';
+      showError(err.message.includes('JSON') ? 'Could not parse response. Try again.' : 'Error: ' + err.message);
+    }
+  }
+
+  function renderBreakdown(data, currency) {
+    const total = data.total_expenses || 0;
+    const income = data.total_income || 0;
+    const remaining = income > 0 ? income - total : null;
+    const savingsRate = income > 0 ? Math.round(((income - total) / income) * 100) : null;
+
+    // Bar chart
+    const maxAmount = Math.max(...(data.categories||[]).map(c => c.amount));
+    const bars = (data.categories||[]).map((c,i) => {
+      const pct = maxAmount > 0 ? (c.amount / maxAmount) * 100 : 0;
+      return `<div class="bar-row">
+        <div class="bar-category" title="${c.name}">${c.name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]};transition-delay:${i*0.05}s" id="bar-${i}">
+            <span>${c.percentage}%</span>
+          </div>
+        </div>
+        <div class="bar-amount">${fmt(c.amount, currency)}</div>
+      </div>`;
+    }).join('');
+
+    // Category cards
+    const cats = (data.categories||[]).map((c,i) => `
+      <div class="cat-card" style="animation-delay:${0.05+i*0.03}s">
+        <div class="cat-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <div class="cat-dot" style="background:${COLORS[i%COLORS.length]}"></div>
+          <span class="cat-name">${c.name}</span>
+          <span class="cat-pct">${c.percentage}%</span>
+          <span class="cat-amount">${fmt(c.amount, currency)}</span>
+        </div>
+        <div class="cat-body">
+          <div class="cat-items">
+            ${(c.items||[]).map(item => `<div class="cat-item"><span>${item.name}</span><span>${fmt(item.amount, currency)}</span></div>`).join('')}
+          </div>
+          ${c.tip ? `<div class="cat-tip">${c.tip}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    const insights = (data.insights||[]).map(ins => `<div class="insight-item">${ins}</div>`).join('');
+
+    document.getElementById('outputBody').innerHTML = `
+      <div class="summary-hero">
+        <div class="summary-label">// monthly summary</div>
+        <div class="summary-row">
+          <div class="summary-box">
+            <div class="summary-box-label">TOTAL EXPENSES</div>
+            <div class="summary-box-value" style="color:var(--red)">${fmt(total, currency)}</div>
+          </div>
+          ${income > 0 ? `
+          <div class="summary-box">
+            <div class="summary-box-label">INCOME</div>
+            <div class="summary-box-value" style="color:var(--amber)">${fmt(income, currency)}</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-box-label">${remaining >= 0 ? 'REMAINING' : 'DEFICIT'}</div>
+            <div class="summary-box-value" style="color:${remaining >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(Math.abs(remaining), currency)}</div>
+          </div>` : `
+          <div class="summary-box">
+            <div class="summary-box-label">CATEGORIES</div>
+            <div class="summary-box-value" style="color:var(--amber)">${(data.categories||[]).length}</div>
+          </div>`}
+        </div>
+        <div class="summary-verdict">${data.verdict}</div>
+      </div>
+
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:16px;animation:fadeUp 0.3s ease both;animation-delay:0.08s;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:0.1em;margin-bottom:12px;">// spending breakdown</div>
+        <div class="bar-chart">${bars}</div>
+      </div>
+
+      <div class="categories-section">
+        <div class="section-header">
+          <span class="section-title">// by category</span>
+          <div class="section-line"></div>
+        </div>
+        ${cats}
+      </div>
+
+      ${insights ? `
+      <div class="insights-section">
+        <div class="insights-label">// plain english insights</div>
+        ${insights}
+      </div>` : ''}
+    `;
+
+    // Animate bars
+    setTimeout(() => {
+      (data.categories||[]).forEach((c,i) => {
+        const bar = document.getElementById(`bar-${i}`);
+        if (bar) {
+          const maxAmount = Math.max(...(data.categories||[]).map(cat => cat.amount));
+          bar.style.width = (c.amount / maxAmount * 100) + '%';
+        }
+      });
+    }, 100);
+
+    window._lastData = { data, currency };
+    document.getElementById('outputWrap').classList.add('visible');
+    document.getElementById('emptyState').style.display = 'none';
+  }
+
+  function copyBreakdown() {
+    if (!window._lastData) return;
+    const { data, currency } = window._lastData;
+    let text = `BUDGET BREAKDOWN\n${'='.repeat(40)}\nTotal Expenses: ${fmt(data.total_expenses, currency)}\n${data.total_income > 0 ? `Monthly Income: ${fmt(data.total_income, currency)}\nRemaining: ${fmt(data.total_income - data.total_expenses, currency)}\n` : ''}\n${data.verdict}\n\nBY CATEGORY\n`;
+    (data.categories||[]).forEach(c => {
+      text += `\n${c.name} — ${fmt(c.amount, currency)} (${c.percentage}%)\n`;
+      (c.items||[]).forEach(i => text += `  ${i.name}: ${fmt(i.amount, currency)}\n`);
+    });
+    text += `\nINSIGHTS\n${(data.insights||[]).map((ins,i) => `${i+1}. ${ins}`).join('\n')}\n\n---\nGenerated by budget-breakdown-generator | engineeredai.net/tools`;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.toolbar-btn');
+      btn.textContent = 'copied ✓'; btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function exportCSV() {
+    if (!window._lastData) return;
+    const { data, currency } = window._lastData;
+    const rows = [['Category','Item','Amount','Percentage']];
+    (data.categories||[]).forEach(c => {
+      (c.items||[]).forEach(i => rows.push([c.name, `"${i.name}"`, i.amount, c.percentage+'%']));
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `budget-breakdown.csv`;
+    a.click();
+  }
+
+  function resetGenerator() {
+    document.getElementById('outputWrap').classList.remove('visible');
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('expenses').value = '';
+    window._lastData = null;
+  }
+</script>
+</body>
+</html>
